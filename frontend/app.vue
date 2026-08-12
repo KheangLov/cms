@@ -5,7 +5,7 @@ const theme = useTheme()
 watch(
   () => colorMode.value,
   (value) => {
-    theme.global.name.value = value === 'dark' ? 'emberDark' : 'emberLight'
+    theme.change(value === 'dark' ? 'emberDark' : 'emberLight')
   },
   { immediate: true },
 )

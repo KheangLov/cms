@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.blocks.serializers import PageBlockTreeSerializer
+
 from .models import Page, PageTranslation, PageType
 
 
@@ -63,6 +65,11 @@ class PageDetailSerializer(PageSerializer):
 
     page_type = PageTypeSerializer(read_only=True)
     full_path = serializers.CharField(read_only=True)
+    blocks = serializers.SerializerMethodField()
 
     class Meta(PageSerializer.Meta):
-        fields = PageSerializer.Meta.fields + ["full_path"]
+        fields = PageSerializer.Meta.fields + ["full_path", "blocks"]
+
+    def get_blocks(self, obj):
+        top_level = obj.blocks.filter(parent__isnull=True).select_related("block_type").order_by("order")
+        return PageBlockTreeSerializer(top_level, many=True).data

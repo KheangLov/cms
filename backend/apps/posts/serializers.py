@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.blocks.serializers import PostBlockTreeSerializer
+
 from .models import Category, CategoryTranslation, Post, PostTranslation, Tag, TagTranslation
 
 
@@ -123,3 +125,11 @@ class PostSerializer(serializers.ModelSerializer):
 class PostDetailSerializer(PostSerializer):
     category = CategorySerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
+    blocks = serializers.SerializerMethodField()
+
+    class Meta(PostSerializer.Meta):
+        fields = PostSerializer.Meta.fields + ["blocks"]
+
+    def get_blocks(self, obj):
+        top_level = obj.blocks.filter(parent__isnull=True).select_related("block_type").order_by("order")
+        return PostBlockTreeSerializer(top_level, many=True).data

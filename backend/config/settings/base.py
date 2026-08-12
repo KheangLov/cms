@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "apps.pages",
     "apps.posts",
     "apps.media_library",
+    "apps.blocks",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -169,6 +170,7 @@ AWS_QUERYSTRING_AUTH = False
 
 # ---------- CORS ----------
 CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=["http://localhost:3000"])
+CORS_ALLOW_CREDENTIALS = True  # the frontend sends/receives the httpOnly refresh cookie cross-origin
 
 # ---------- DRF — CMS_BUILD_PROMPT.md §5.16 ----------
 REST_FRAMEWORK = {
