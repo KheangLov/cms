@@ -2,3 +2,4 @@
 
 django-extensions==4.1
 watchdog==6.0.0
+pyotp==2.10.0  # generates valid TOTP codes for testing the 2FA flow end-to-end

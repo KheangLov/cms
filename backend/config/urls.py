@@ -4,11 +4,14 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.pages.resolver import ResolveView
 from apps.search.views import SearchView
+from apps.users.social import SocialExchangeView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    path("accounts/", include("allauth.urls")),
     path("api/v1/health/", include("apps.health.urls")),
     path("api/v1/auth/", include("apps.users.urls")),
+    path("api/v1/auth/social/exchange/", SocialExchangeView.as_view(), name="social-exchange"),
     path("api/v1/", include("apps.roles_permissions.urls")),
     path("api/v1/", include("apps.settings_app.urls")),
     path("api/v1/", include("apps.pages.urls")),

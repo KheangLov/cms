@@ -35,6 +35,15 @@ INSTALLED_APPS = [
     "corsheaders",
     "channels",
     "drf_spectacular",
+    "django_otp",
+    "django_otp.plugins.otp_totp",
+    "django_otp.plugins.otp_static",
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
+    "allauth.socialaccount.providers.facebook",
     # project — see CMS_BUILD_PROMPT.md §7 for the full planned app list;
     # apps are added here as each build phase actually implements them.
     "apps.common",
@@ -65,6 +74,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.activity_log.context.CurrentRequestMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -217,6 +227,42 @@ SIMPLE_JWT = {
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "USER_ID_FIELD": "id",
+}
+
+# ---------- Social login — §5.6, apps/users/social.py ----------
+# Real Google/Facebook app credentials aren't available in this dev environment —
+# these read from env vars and default to empty, which allauth handles gracefully
+# (the provider just won't be usable until real credentials are supplied). The
+# wiring itself (adapter, exchange endpoint, URLs) is what's verified here.
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+]
+
+ACCOUNT_ADAPTER = "apps.users.social.SPARedirectAccountAdapter"
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*"]  # no separate username — matches the custom User model (§5.4)
+ACCOUNT_EMAIL_VERIFICATION = "none"  # social providers already verify the email
+
+FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:3000")
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            "client_id": env("GOOGLE_OAUTH_CLIENT_ID", default=""),
+            "secret": env("GOOGLE_OAUTH_CLIENT_SECRET", default=""),
+            "key": "",
+        }
+    },
+    "facebook": {
+        "APP": {
+            "client_id": env("FACEBOOK_OAUTH_CLIENT_ID", default=""),
+            "secret": env("FACEBOOK_OAUTH_CLIENT_SECRET", default=""),
+            "key": "",
+        }
+    },
 }
 
 # ---------- Settings module secret encryption — §5.8, apps/settings_app ----------

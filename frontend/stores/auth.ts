@@ -46,11 +46,33 @@ export const useAuthStore = defineStore('auth', {
         // no valid refresh cookie — the user simply isn't logged in, not an error
       }
     },
+    /**
+     * §5.5 — when the account has 2FA enabled, the API returns
+     * {requires_2fa, pending_token} instead of a token pair. The caller (the
+     * login page) needs to show a code-entry step and call verify2FA() next.
+     */
     async login(email: string, password: string) {
-      const data = await $fetch<{ access: string; user: User }>('/api/v1/auth/login/', {
+      const data = await $fetch<{ access?: string; user?: User; requires_2fa?: boolean; pending_token?: string }>(
+        '/api/v1/auth/login/',
+        {
+          baseURL: apiBase(),
+          method: 'POST',
+          body: { email, password },
+          credentials: 'include',
+        },
+      )
+      if (data.requires_2fa) {
+        return { requiresTwoFactor: true as const, pendingToken: data.pending_token as string }
+      }
+      this.accessToken = data.access as string
+      this.user = data.user as User
+      return { requiresTwoFactor: false as const }
+    },
+    async verifyTwoFactor(pendingToken: string, code: string) {
+      const data = await $fetch<{ access: string; user: User }>('/api/v1/auth/2fa/verify/', {
         baseURL: apiBase(),
         method: 'POST',
-        body: { email, password },
+        body: { pending_token: pendingToken, code },
         credentials: 'include',
       })
       this.accessToken = data.access

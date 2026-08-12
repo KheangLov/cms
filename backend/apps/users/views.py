@@ -15,7 +15,7 @@ REFRESH_COOKIE_PATH = "/api/v1/auth/"
 REFRESH_COOKIE_MAX_AGE = 60 * 60 * 24 * 14
 
 
-def _set_refresh_cookie(response, refresh_token):
+def set_refresh_cookie(response, refresh_token):
     response.set_cookie(
         REFRESH_COOKIE,
         str(refresh_token),
@@ -41,7 +41,7 @@ class RegisterView(APIView):
             {"access": str(refresh.access_token), "user": UserSerializer(user).data},
             status=status.HTTP_201_CREATED,
         )
-        _set_refresh_cookie(response, refresh)
+        set_refresh_cookie(response, refresh)
         return response
 
 
@@ -54,9 +54,19 @@ class LoginView(APIView):
         user = authenticate(request, email=email, password=password)
         if user is None:
             return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if user.is_2fa_enabled:
+            # §5.5 — opt-in per user. Password verified, but no tokens issued yet —
+            # /2fa/verify/ (apps/users/two_factor.py) needs a valid TOTP/recovery
+            # code against this short-lived signed pending_token before a real
+            # JWT pair is granted.
+            from .two_factor import make_pending_token
+
+            return Response({"requires_2fa": True, "pending_token": make_pending_token(user.id)})
+
         refresh = RefreshToken.for_user(user)
         response = Response({"access": str(refresh.access_token), "user": UserSerializer(user).data})
-        _set_refresh_cookie(response, refresh)
+        set_refresh_cookie(response, refresh)
 
         from apps.activity_log.utils import log_activity
 
