@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "apps.blocks",
     "apps.activity_log",
     "apps.comments",
+    "apps.search",
 ]
 
 AUTH_USER_MODEL = "users.User"

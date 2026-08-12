@@ -3,6 +3,7 @@ from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.pages.resolver import ResolveView
+from apps.search.views import SearchView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -17,6 +18,7 @@ urlpatterns = [
     path("api/v1/", include("apps.activity_log.urls")),
     path("api/v1/", include("apps.comments.urls")),
     path("api/v1/resolve/", ResolveView.as_view(), name="resolve"),
+    path("api/v1/search/", SearchView.as_view(), name="search"),
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/v1/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
 ]
