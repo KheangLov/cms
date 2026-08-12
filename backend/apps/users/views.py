@@ -1,3 +1,5 @@
+import logging
+
 from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import status
@@ -8,6 +10,8 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterSerializer, UserSerializer
+
+logger = logging.getLogger(__name__)
 
 REFRESH_COOKIE = "refresh_token"
 REFRESH_COOKIE_PATH = "/api/v1/auth/"
@@ -53,6 +57,7 @@ class LoginView(APIView):
         password = request.data.get("password")
         user = authenticate(request, email=email, password=password)
         if user is None:
+            logger.warning("Failed login attempt for %s", email)
             return Response({"detail": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
 
         if user.is_2fa_enabled:

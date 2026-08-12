@@ -1,3 +1,5 @@
+import logging
+
 import redis
 from botocore.exceptions import BotoCoreError, ClientError
 from django.conf import settings
@@ -9,6 +11,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 import boto3
+
+logger = logging.getLogger(__name__)
 
 
 def _check_database():
@@ -71,6 +75,9 @@ class HealthCheckView(APIView):
         }
         results = {name: {"ok": ok, "detail": detail} for name, (ok, detail) in checks.items()}
         overall_ok = all(ok for ok, _ in checks.values())
+        if not overall_ok:
+            failing = [name for name, (ok, _detail) in checks.items() if not ok]
+            logger.warning("Health check degraded — failing dependencies: %s", ", ".join(failing))
         return Response(
             {"status": "healthy" if overall_ok else "degraded", "checks": results},
             status=200 if overall_ok else 503,
