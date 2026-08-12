@@ -25,7 +25,24 @@ class CommentViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+        from apps.realtime.utils import notify_user
+
+        comment = serializer.save(author=self.request.user)
+
+        target = comment.content_object
+        owner_id = getattr(target, "created_by_id", None) or getattr(target, "author_id", None)
+        if owner_id and owner_id != comment.author_id:
+            notify_user(
+                owner_id,
+                {
+                    "event": "comment.created",
+                    "comment_id": comment.id,
+                    "target_type": comment.content_type.model,
+                    "target_id": comment.object_id,
+                    "author": comment.author.email,
+                    "body": comment.body[:140],
+                },
+            )
 
     def perform_destroy(self, instance):
         instance.soft_delete(user=self.request.user)

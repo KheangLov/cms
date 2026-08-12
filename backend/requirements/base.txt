@@ -13,7 +13,14 @@ daphne==4.2.3
 
 celery==5.6.3
 django-celery-beat==2.9.0
-redis==8.1.0
+# Pinned to the 5.x line, not the newest 8.x — channels-redis==4.3.0 declares
+# "redis>=4.6" with no upper bound, but 8.1.0 caused real WebSocket connections
+# to die with "redis.exceptions.TimeoutError: Timeout reading from valkey:6379"
+# on the very first live test (Phase 8). 5.3.1 is the long-established stable
+# line channels-redis was actually tested against. Same class of issue as the
+# Django 6.1/django-celery-beat conflict from Phase 0 — a declared version
+# floor doesn't mean every newer release was verified compatible.
+redis==5.3.1
 
 psycopg[binary]==3.3.4
 django-environ==0.14.0

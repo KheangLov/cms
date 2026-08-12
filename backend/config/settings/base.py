@@ -15,6 +15,13 @@ DEBUG = env.bool("DJANGO_DEBUG", default=False)
 ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
 INSTALLED_APPS = [
+    # "daphne" must be first — this is what makes `manage.py runserver` ASGI/
+    # WebSocket-capable in dev (it patches the runserver command). Without it,
+    # runserver is WSGI-only and silently 404s any WebSocket URL through Django's
+    # normal HTTP resolver instead of routing it through config/asgi.py. Found
+    # while verifying Phase 8 — HTTP endpoints all worked fine either way, so this
+    # was invisible until the first real WebSocket connection attempt.
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -43,6 +50,7 @@ INSTALLED_APPS = [
     "apps.comments",
     "apps.search",
     "apps.ai_agent",
+    "apps.realtime",
 ]
 
 AUTH_USER_MODEL = "users.User"

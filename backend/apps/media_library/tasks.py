@@ -59,3 +59,18 @@ def process_media(media_id):
         raise
     finally:
         media.save()
+        _notify_completion(media)
+
+
+def _notify_completion(media):
+    from apps.realtime.utils import notify_user
+
+    notify_user(
+        media.uploaded_by_id,
+        {
+            "event": "media.processed",
+            "media_id": media.id,
+            "status": media.processing_status,
+            "original_filename": media.original_filename,
+        },
+    )

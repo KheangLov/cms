@@ -20,7 +20,7 @@ class GenerateContentView(APIView):
         provider = request.data.get("provider", "openai")
         if not prompt:
             return Response({"detail": "prompt is required"}, status=400)
-        task = generate_content_task.delay(provider, prompt)
+        task = generate_content_task.delay(provider, prompt, user_id=request.user.id)
         return Response({"task_id": task.id}, status=202)
 
 
@@ -34,7 +34,7 @@ class TranslateContentView(APIView):
         provider = request.data.get("provider", "openai")
         if not text:
             return Response({"detail": "text is required"}, status=400)
-        task = translate_content_task.delay(provider, text, source_locale, target_locale)
+        task = translate_content_task.delay(provider, text, source_locale, target_locale, user_id=request.user.id)
         return Response({"task_id": task.id}, status=202)
 
 
