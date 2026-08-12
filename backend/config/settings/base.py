@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "apps.activity_log",
     "apps.comments",
     "apps.search",
+    "apps.ai_agent",
 ]
 
 AUTH_USER_MODEL = "users.User"
