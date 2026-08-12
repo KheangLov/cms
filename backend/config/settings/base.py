@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "apps.settings_app",
     "apps.pages",
     "apps.posts",
+    "apps.media_library",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -150,10 +151,16 @@ STORAGES = {
     },
 }
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", default="cms-media")
+# Internal — what Django/boto3 itself uses to talk to MinIO over the Docker network.
 AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", default="http://minio:9000")
 AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", default="cms_minio_admin")
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", default="")
 AWS_S3_ADDRESSING_STYLE = "path"
+# Public — the domain baked into generated file URLs (Media.file.url etc.), separate
+# from the internal endpoint above so a browser can actually load them. "minio:9000"
+# only resolves inside the Docker network. Discovered at Phase 3.
+AWS_S3_CUSTOM_DOMAIN = env("AWS_S3_CUSTOM_DOMAIN", default="localhost:9090/cms-media")
+AWS_S3_URL_PROTOCOL = "http:"
 AWS_DEFAULT_ACL = None
 # Dev bucket is public-read (see infra/docker-compose.yml minio-init), so plain URLs
 # work with no signature. Phase 3 (Media Library) revisits this for draft/unpublished

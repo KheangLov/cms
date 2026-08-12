@@ -82,8 +82,9 @@ class PageTranslation(models.Model):
     title = models.CharField(max_length=255)
     meta_title = models.CharField(max_length=255, blank=True)
     meta_description = models.CharField(max_length=500, blank=True)
-    # FK to Media lands in Phase 3 — plain URL field until then.
-    og_image_url = models.URLField(blank=True)
+    og_image = models.ForeignKey(
+        "media_library.Media", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
 
     class Meta:
         constraints = [

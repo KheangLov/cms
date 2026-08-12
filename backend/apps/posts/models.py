@@ -82,6 +82,9 @@ class Post(SoftDeleteModel):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="posts"
     )
+    featured_image = models.ForeignKey(
+        "media_library.Media", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
+    )
     published_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:

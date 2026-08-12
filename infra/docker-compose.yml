@@ -88,8 +88,12 @@ services:
       - minio_data:/data
     ports:
       # Host-side only — 9000/9001 are already taken by an unrelated project's MinIO
-      # on this machine, discovered at Phase 0. Internal container port stays 9001;
-      # only the host mapping moves.
+      # on this machine, discovered at Phase 0. Internal container ports are unchanged;
+      # only the host mapping moves. 9090 (API) is also needed so the browser can
+      # actually load media URLs — see AWS_S3_CUSTOM_DOMAIN in settings/base.py,
+      # discovered at Phase 3 (uploads worked, but returned unreachable minio:9000
+      # URLs since the API port wasn't published to the host at all before this).
+      - "9090:9000" # S3 API — public-facing URL domain for Media.file etc.
       - "9091:9001" # console
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9000/minio/health/live || exit 1"]
@@ -136,7 +140,10 @@ services:
 
   celery-worker:
     <<: *backend-image
-    command: celery -A config worker -l info
+    # Dev only: celery workers don't reload task code on change either (same class of
+    # issue as daphne not autoreloading, found at Phase 2) — watchmedo restarts the
+    # whole worker process on any .py change so new/edited tasks are picked up.
+    command: watchmedo auto-restart --directory=./ --pattern=*.py --recursive -- celery -A config worker -l info
     depends_on:
       backend:
         condition: service_healthy

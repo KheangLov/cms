@@ -13,7 +13,7 @@ class PageTypeSerializer(serializers.ModelSerializer):
 class PageTranslationSerializer(serializers.ModelSerializer):
     class Meta:
         model = PageTranslation
-        fields = ["id", "locale", "title", "meta_title", "meta_description", "og_image_url"]
+        fields = ["id", "locale", "title", "meta_title", "meta_description", "og_image"]
 
 
 class PageSerializer(serializers.ModelSerializer):

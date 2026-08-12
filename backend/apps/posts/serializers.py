@@ -85,6 +85,7 @@ class PostSerializer(serializers.ModelSerializer):
             "category",
             "tags",
             "author",
+            "featured_image",
             "published_at",
             "created_at",
             "updated_at",
