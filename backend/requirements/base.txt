@@ -23,3 +23,6 @@ boto3==1.43.69
 
 elasticsearch==9.5.0
 Pillow==12.3.0
+
+djangorestframework-simplejwt==5.5.1
+cryptography==50.0.0

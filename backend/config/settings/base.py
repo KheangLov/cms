@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     # third-party
     "rest_framework",
+    "rest_framework_simplejwt.token_blacklist",
     "django_filters",
     "corsheaders",
     "channels",
@@ -31,7 +32,12 @@ INSTALLED_APPS = [
     # apps are added here as each build phase actually implements them.
     "apps.common",
     "apps.health",
+    "apps.users",
+    "apps.roles_permissions",
+    "apps.settings_app",
 ]
+
+AUTH_USER_MODEL = "users.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -165,6 +171,10 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",  # for the browsable API / admin
+    ],
 }
 
 SPECTACULAR_SETTINGS = {
@@ -172,3 +182,22 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "WordPress-inspired CMS — see CMS_BUILD_PROMPT.md at the repo root.",
     "VERSION": "0.1.0",
 }
+
+# ---------- JWT auth — §5.4. Access token in the response body, refresh token as an
+# httpOnly cookie (see apps/users/views.py) — §10.2's confirmed shape. ----------
+from datetime import timedelta  # noqa: E402
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=15),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "USER_ID_FIELD": "id",
+}
+
+# ---------- Settings module secret encryption — §5.8, apps/settings_app ----------
+# Dev-only default below is a syntactically valid Fernet key so the app doesn't crash
+# with no .env — generate a real one (`Fernet.generate_key()`) for any shared/prod env.
+SETTINGS_ENCRYPTION_KEY = env(
+    "SETTINGS_ENCRYPTION_KEY", default="dx39U2u_6sftD3A7dfMr_c7Jz_O01VyST65AbiiFxyU="
+)
