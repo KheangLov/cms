@@ -1,0 +1,86 @@
+// Ember design tokens — CMS_BUILD_PROMPT.md §11. Single source of truth referenced by
+// both Vuetify (nuxt.config.ts) and Tailwind (tailwind.css) — §11.6.
+
+:root {
+  --bg: #FBF7F2;
+  --surface: #FFFFFF;
+  --surface-2: #FFF3EE;
+  --text-primary: #1C1720;
+  --text-secondary: #6B6270;
+  --text-faint: #9C93A0;
+  --border: rgba(20, 17, 28, 0.10);
+
+  --ember: #FF6B4A;
+  --ember-text: #C7431F;
+  --wine: #B0296B;
+  --wine-text: #8C1F55;
+  --gold: #E3B23C;
+  --gold-text: #8A5E10;
+
+  --success: #2F9D68;
+  --success-bg: rgba(47, 157, 104, 0.12);
+  --error: #D93636;
+  --error-bg: rgba(217, 54, 54, 0.10);
+  --info: #3873D9;
+  --info-bg: rgba(56, 115, 217, 0.10);
+
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-shadow: 0 0.5rem 2rem rgba(176, 41, 107, 0.16);
+  --tonal-bg: rgba(255, 107, 74, 0.12);
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.75rem;
+  --radius-full: 999rem;
+
+  --gradient-primary: linear-gradient(135deg, var(--ember) 0%, var(--wine) 100%);
+}
+
+// Dark mode — driven by @nuxtjs/color-mode's `dark` class on <html> (§11.8), not a
+// media query directly, so the explicit light/dark/system toggle is authoritative.
+.dark {
+  --bg: #14111C;
+  --surface: #1E1A27;
+  --surface-2: #241F2E;
+  --text-primary: #F3EEE9;
+  --text-secondary: #B4AAB8;
+  --text-faint: #786E82;
+  --border: rgba(255, 255, 255, 0.09);
+
+  --ember: #FF7C5C;
+  --ember-text: #FF9478;
+  --wine: #E24F92;
+  --wine-text: #F17FAF;
+  --gold: #F0C15A;
+  --gold-text: #F0C15A;
+
+  --success: #4FCB8E;
+  --success-bg: rgba(79, 203, 142, 0.15);
+  --error: #F2695D;
+  --error-bg: rgba(242, 105, 93, 0.15);
+  --info: #6FA6F2;
+  --info-bg: rgba(111, 166, 242, 0.15);
+
+  --glass-bg: rgba(36, 31, 46, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-shadow: 0 0.5rem 2rem rgba(0, 0, 0, 0.45);
+  --tonal-bg: rgba(255, 124, 92, 0.16);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+}
+
+:lang(km) {
+  font-family: 'Kantumruy Pro', 'Manrope', system-ui, sans-serif;
+}
+
+.gradient-text {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

@@ -1,0 +1,36 @@
+# env
+.env
+.env.*
+!.env.example
+
+# Python / Django
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+staticfiles/
+mediafiles/
+
+# Node / Nuxt
+node_modules/
+.nuxt/
+.output/
+.data/
+dist/
+
+# Docker volumes mounted locally (if any)
+infra/.volumes/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code local session/tooling state — not project content
+.claude/
+
+# Logs
+*.log

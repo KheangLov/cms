@@ -1,0 +1,27 @@
+/* Preflight deliberately skipped — Vuetify's own base styles handle reset for the whole
+   app (both admin and public routes share one Nuxt instance), so Tailwind here is a pure
+   utility layer. CMS_BUILD_PROMPT.md §2's Vuetify/Tailwind split. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Map Tailwind's color utilities (bg-primary, text-primary, ...) onto the same tokens
+   Vuetify reads — §11.6. */
+@theme inline {
+  --color-primary: var(--ember);
+  --color-primary-text: var(--ember-text);
+  --color-secondary: var(--wine);
+  --color-secondary-text: var(--wine-text);
+  --color-tertiary: var(--gold);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+}

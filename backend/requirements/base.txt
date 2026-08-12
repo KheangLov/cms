@@ -1,0 +1,25 @@
+# Pinned exact — CMS_BUILD_PROMPT.md §2. Verified against PyPI 2026-08-12; re-check before
+# a fresh scaffold months from now, this stack moves fast.
+
+Django==5.2.17
+djangorestframework==3.18.0
+django-filter==26.1
+django-cors-headers==4.9.0
+drf-spectacular==0.30.0
+
+channels==4.3.2
+channels-redis==4.3.0
+daphne==4.2.3
+
+celery==5.6.3
+django-celery-beat==2.9.0
+redis==8.1.0
+
+psycopg[binary]==3.3.4
+django-environ==0.14.0
+
+django-storages[boto3]==1.14.6
+boto3==1.43.69
+
+elasticsearch==9.5.0
+Pillow==12.3.0
