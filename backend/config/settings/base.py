@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     "apps.users",
     "apps.roles_permissions",
     "apps.settings_app",
+    "apps.pages",
+    "apps.posts",
 ]
 
 AUTH_USER_MODEL = "users.User"

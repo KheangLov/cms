@@ -115,6 +115,11 @@ services:
 
   backend:
     <<: *backend-image
+    # Dev only: Django's runserver (Channels-patched to stay ASGI-capable when
+    # "channels" is in INSTALLED_APPS) autoreloads on code changes; daphne — the
+    # Dockerfile's default CMD, used in prod — does not, so backend code edits were
+    # silently not taking effect without a manual restart. Discovered at Phase 2.
+    command: python manage.py runserver 0.0.0.0:8000
     environment:
       RUN_MIGRATIONS: "1" # the only service allowed to run migrate — see entrypoint.sh
     ports:
