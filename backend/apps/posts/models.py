@@ -75,6 +75,9 @@ class Post(SoftDeleteModel):
 
     slug = models.SlugField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    # CMS_BUILD_PROMPT.md §5.13 only specified this on Page — added here too since
+    # blog posts are, if anything, the more commonly-commented content type.
+    comments_enabled = models.BooleanField(default=True)
     category = models.ForeignKey(
         Category, null=True, blank=True, on_delete=models.SET_NULL, related_name="posts"
     )

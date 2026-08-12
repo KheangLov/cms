@@ -12,15 +12,21 @@ class BlockTypeSerializer(serializers.ModelSerializer):
 class PageBlockSerializer(serializers.ModelSerializer):
     class Meta:
         model = PageBlock
-        fields = ["id", "page", "block_type", "parent", "order", "props", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        fields = [
+            "id", "page", "block_type", "parent", "order", "props",
+            "created_at", "updated_at", "is_deleted", "deleted_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "is_deleted", "deleted_at"]
 
 
 class PostBlockSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostBlock
-        fields = ["id", "post", "block_type", "parent", "order", "props", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        fields = [
+            "id", "post", "block_type", "parent", "order", "props",
+            "created_at", "updated_at", "is_deleted", "deleted_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "is_deleted", "deleted_at"]
 
 
 class PageBlockTreeSerializer(serializers.ModelSerializer):

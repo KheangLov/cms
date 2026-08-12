@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     "apps.posts",
     "apps.media_library",
     "apps.blocks",
+    "apps.activity_log",
+    "apps.comments",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -52,6 +54,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "apps.activity_log.context.CurrentRequestMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -183,7 +186,7 @@ REST_FRAMEWORK = {
         "rest_framework.filters.OrderingFilter",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "apps.activity_log.authentication.TrackingJWTAuthentication",
         "rest_framework.authentication.SessionAuthentication",  # for the browsable API / admin
     ],
 }

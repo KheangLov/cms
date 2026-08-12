@@ -57,6 +57,11 @@ class LoginView(APIView):
         refresh = RefreshToken.for_user(user)
         response = Response({"access": str(refresh.access_token), "user": UserSerializer(user).data})
         _set_refresh_cookie(response, refresh)
+
+        from apps.activity_log.utils import log_activity
+
+        log_activity("login", user, actor=user)
+
         return response
 
 

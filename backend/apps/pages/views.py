@@ -41,16 +41,22 @@ class PageViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def publish(self, request, pk=None):
+        from apps.activity_log.utils import log_activity
+
         page = self.get_object()
         page.status = "published"
         page.save(update_fields=["status"])
+        log_activity("publish", page)
         return Response(PageSerializer(page).data)
 
     @action(detail=True, methods=["post"])
     def unpublish(self, request, pk=None):
+        from apps.activity_log.utils import log_activity
+
         page = self.get_object()
         page.status = "draft"
         page.save(update_fields=["status"])
+        log_activity("unpublish", page)
         return Response(PageSerializer(page).data)
 
     @action(detail=True, methods=["post"])

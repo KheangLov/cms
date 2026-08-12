@@ -54,9 +54,20 @@ class SoftDeleteModel(TimestampedModel):
         self.deleted_at = timezone.now()
         self.deleted_by = user
         self.save(update_fields=["is_deleted", "deleted_at", "deleted_by"])
+        self._log_activity("delete")
 
     def restore(self):
         self.is_deleted = False
         self.deleted_at = None
         self.deleted_by = None
         self.save(update_fields=["is_deleted", "deleted_at", "deleted_by"])
+        self._log_activity("restore")
+
+    def _log_activity(self, verb):
+        # Local import — apps.common must not depend on apps.activity_log at
+        # module-load time (activity_log's own signals fire for saves across many
+        # apps and shouldn't be a hard import-time dependency of the base model
+        # every content app inherits from). CMS_BUILD_PROMPT.md §5.10.
+        from apps.activity_log.utils import log_activity
+
+        log_activity(verb, self)

@@ -25,6 +25,15 @@ class PageBlockViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return PageBlock.objects.select_related("block_type", "parent", "page")
 
+    def perform_destroy(self, instance):
+        instance.soft_delete(user=self.request.user if self.request.user.is_authenticated else None)
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        block = PageBlock.all_objects.get(pk=pk)
+        block.restore()
+        return Response(PageBlockSerializer(block).data)
+
     @action(detail=False, methods=["post"])
     def reorder(self, request):
         """Body: [{"id": 1, "order": 0, "parent": null}, ...] — one PATCH per drag
@@ -43,6 +52,15 @@ class PostBlockViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return PostBlock.objects.select_related("block_type", "parent", "post")
+
+    def perform_destroy(self, instance):
+        instance.soft_delete(user=self.request.user if self.request.user.is_authenticated else None)
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        block = PostBlock.all_objects.get(pk=pk)
+        block.restore()
+        return Response(PostBlockSerializer(block).data)
 
     @action(detail=False, methods=["post"])
     def reorder(self, request):

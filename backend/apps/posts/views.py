@@ -36,16 +36,22 @@ class PostViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["post"])
     def publish(self, request, pk=None):
+        from apps.activity_log.utils import log_activity
+
         post = self.get_object()
         post.status = "published"
         post.save(update_fields=["status"])
+        log_activity("publish", post)
         return Response(PostSerializer(post).data)
 
     @action(detail=True, methods=["post"])
     def unpublish(self, request, pk=None):
+        from apps.activity_log.utils import log_activity
+
         post = self.get_object()
         post.status = "draft"
         post.save(update_fields=["status"])
+        log_activity("unpublish", post)
         return Response(PostSerializer(post).data)
 
     @action(detail=True, methods=["post"])
