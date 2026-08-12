@@ -12,6 +12,7 @@ venv/
 *.egg-info/
 staticfiles/
 mediafiles/
+celerybeat-schedule*
 
 # Node / Nuxt
 node_modules/
