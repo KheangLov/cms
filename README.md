@@ -26,6 +26,7 @@ docker compose -f infra/docker-compose.yml --env-file .env exec backend python m
 | Django admin | http://localhost:8010/admin/ |
 | Kibana (logs) | http://localhost:5601 |
 | MinIO console | http://localhost:9091 |
+| PostgreSQL (for pgAdmin/DBeaver/etc.) | `localhost:5432` — db `cms`, user `cms`, password `cms` (from `.env`) |
 
 Check everything came up healthy:
 

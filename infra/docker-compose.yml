@@ -27,6 +27,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-cms}
       POSTGRES_USER: ${POSTGRES_USER:-cms}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cms}
+    ports:
+      # Published for host-side DB GUI tools (pgAdmin/DBeaver/TablePlus). Not
+      # used by any in-stack service — they all reach postgres:5432 over the
+      # Docker network regardless of this mapping.
+      - "5432:5432"
     volumes:
       # Postgres 18+ images expect the mount one level up from "data" — see
       # https://github.com/docker-library/postgres/pull/1259. Discovered at Phase 0.
