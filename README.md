@@ -2,7 +2,7 @@
 
 A WordPress/Elementor-inspired content management system: dynamic pages and posts, a drag-and-drop visual page builder with reusable blocks, role-based permissions, 2FA + social login, an AI content-assist agent (bring your own API key), real-time notifications, full-text search, bilingual (Khmer/English) content, and centralized logging — built as a Django REST + Nuxt monorepo, fully containerized.
 
-All 10 build phases are complete and verified end-to-end. See [`docs/PROJECT_DOCUMENTATION.md`](docs/PROJECT_DOCUMENTATION.md) for the full technical reference, and [`docs/build-report.html`](docs/build-report.html) for how it was built (every bug found and fixed, phase by phase).
+All 10 build phases are complete and verified end-to-end. The Nuxt admin dashboard has full CRUD parity with everything the backend exposes — pages, posts, media, users, roles, settings, comments, activity log — so **the backend is REST-API-only**; Django's own `/admin/` site is not mounted. See [`docs/PROJECT_DOCUMENTATION.md`](docs/PROJECT_DOCUMENTATION.md) for the full technical reference, and [`docs/build-report.html`](docs/build-report.html) for how it was built (every bug found and fixed, phase by phase).
 
 ## Quick start
 
@@ -11,7 +11,7 @@ cp .env.example .env
 docker compose -f infra/docker-compose.yml --env-file .env up -d --build
 ```
 
-First boot creates the Postgres schema and Elasticsearch indices automatically. Create an admin user once the backend is healthy:
+First boot creates the Postgres schema and Elasticsearch indices automatically. Create an admin user once the backend is healthy — this is also your login for the Nuxt admin dashboard, since there's no separate Django admin anymore:
 
 ```bash
 docker compose -f infra/docker-compose.yml --env-file .env exec backend python manage.py createsuperuser
@@ -23,7 +23,6 @@ docker compose -f infra/docker-compose.yml --env-file .env exec backend python m
 | Admin dashboard | http://localhost:3000/admin |
 | Backend API | http://localhost:8010 |
 | API docs (Swagger) | http://localhost:8010/api/v1/docs/ |
-| Django admin | http://localhost:8010/admin/ |
 | Kibana (logs) | http://localhost:5601 |
 | MinIO console | http://localhost:9091 |
 | PostgreSQL (for pgAdmin/DBeaver/etc.) | `localhost:5432` — db `cms`, user `cms`, password `cms` (from `.env`) |

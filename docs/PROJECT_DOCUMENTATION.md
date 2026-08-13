@@ -149,13 +149,27 @@ Each is a Django app under `backend/apps/`.
 ```
 frontend/
   pages/
-    index.vue                    Public homepage
-    [...slug].vue                Public catch-all — resolves via /api/v1/resolve/, renders blocks
-    admin/index.vue               Admin dashboard home (notifications feed)
-    admin/login.vue                Login, including the 2FA step and social login buttons
-    admin/social-callback.vue      Exchanges the allauth one-time code for a JWT session
-    admin/pages/index.vue          Page list
-    admin/pages/[id]/index.vue     The drag-and-drop block builder
+    index.vue                      Public homepage
+    [...slug].vue                  Public catch-all — resolves via /api/v1/resolve/, renders blocks
+    admin/index.vue                 Dashboard home — live stats + recent activity
+    admin/login.vue                  Login, including the 2FA step and social login buttons
+    admin/social-callback.vue        Exchanges the allauth one-time code for a JWT session
+    admin/pages/index.vue            Page list
+    admin/pages/[id]/index.vue       The drag-and-drop block builder
+    admin/posts/index.vue            Post list
+    admin/posts/[id]/index.vue       Block builder (same pattern as pages)
+    admin/categories/index.vue       Category CRUD
+    admin/tags/index.vue             Tag CRUD
+    admin/media/index.vue            Upload, browse, trash/restore
+    admin/users/index.vue            User list — role assignment, activate/deactivate
+    admin/roles/index.vue            Role list — permission checkboxes grouped by app
+    admin/settings/index.vue         Key/value settings, grouped by category, secrets masked
+    admin/comments/index.vue         Moderation queue — approve/reject/delete
+    admin/activity/index.vue         Full audit trail, filterable by action
+    admin/account/security.vue       Self-service 2FA enroll/disable
+    admin/ai/index.vue               Manual AI generate/translate triggers
+  layouts/admin.vue               Nav rail + glass app bar + notification bell — every /admin/** page
+  middleware/auth.ts              Route guard — redirects to /admin/login when not authenticated
   components/blocks/
     BlockRenderer.vue              Dispatches a block's `block_type.slug` to the right component
     HeroBlock.vue / TextSectionBlock.vue / SwiperBlock.vue / ColumnsBlock.vue
@@ -169,6 +183,8 @@ frontend/
 
 Vuetify owns the admin shell; Tailwind owns the public site and the block components shared between builder and renderer (Tailwind's preflight is disabled admin-side so it doesn't fight Vuetify). Both read the same design tokens — see [Design system](#design-system).
 
+The Nuxt admin has full CRUD parity with the backend — every resource listed under [API surface](#api-surface) below is reachable from the UI. Django's own `/admin/` site is not mounted; the backend is REST-API-only.
+
 ## API surface
 
 All routes are under `/api/v1/`. Full interactive reference (including request/response schemas): **http://localhost:8010/api/v1/docs/** (drf-spectacular/Swagger).
@@ -178,6 +194,7 @@ All routes are under `/api/v1/`. Full interactive reference (including request/r
 | `auth/register/`, `login/`, `refresh/`, `logout/`, `me/` | users | JWT auth |
 | `auth/2fa/setup/`, `confirm/`, `disable/`, `verify/` | users | TOTP 2FA |
 | `auth/social/exchange/` | users | Exchanges an allauth one-time code for a JWT pair |
+| `users/` | users | Administration over the User list — distinct from the self-service `auth/` paths above, gated by `manage_users` |
 | `roles/`, `permissions/` | roles_permissions | Django Group/Permission CRUD |
 | `settings/` | settings_app | Encrypted where `is_secret=true` |
 | `pages/`, `page-types/` | pages | + `publish`/`unpublish`/`restore`/`duplicate` actions |
@@ -266,7 +283,7 @@ docker compose -f infra/docker-compose.yml --env-file .env exec backend pytest -
 ## Known limitations
 
 - **Social login has never completed a real OAuth round trip.** Google/Facebook login is fully wired (routes resolve, invalid exchange codes are correctly rejected) but this environment has no real OAuth app credentials. Add `GOOGLE_OAUTH_CLIENT_ID`/`FACEBOOK_OAUTH_CLIENT_ID` (and secrets) to `.env`, then do one live login per provider before trusting it in production.
-- **WebSocket presence and a live admin activity feed were deferred** from Phase 8's scope — only the notification channel was built.
+- **WebSocket presence was deferred** from Phase 8's scope — only the notification channel was built. (The activity log itself has a full admin UI now — `admin/activity/index.vue` — it's just a regular fetched list, not push-updated over the WebSocket.)
 - **A cosmetic DRF pagination warning** on soft-deleted querysets (`SoftDeleteQuerySet` has no explicit default ordering) — harmless at current scale.
 - **`redis` (the Python client) is pinned to 5.3.1**, not the newest 8.x — `channels-redis==4.3.0` was never tested against 8.x and every WebSocket connection died with a timeout under it. Re-verify compatibility before bumping.
 - **MinIO's open-source edition entered maintenance mode** in December 2025. The app only talks the S3 API, so switching to OpenMaxIO or Garage would be a low-effort change if ever needed.
