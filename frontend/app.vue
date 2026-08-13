@@ -13,6 +13,8 @@ watch(
 
 <template>
   <v-app>
-    <NuxtPage />
+    <NuxtLayout>
+      <NuxtPage />
+    </NuxtLayout>
   </v-app>
 </template>

@@ -1,15 +1,19 @@
 import logging
 
 from django.conf import settings
-from django.contrib.auth import authenticate
-from rest_framework import status
+from django.contrib.auth import authenticate, get_user_model
+from rest_framework import status, viewsets
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import RegisterSerializer, UserSerializer
+from apps.roles_permissions.permissions import IsSuperuserOrManageUsers
+
+from .serializers import RegisterSerializer, UserAdminSerializer, UserSerializer
+
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -117,3 +121,18 @@ class MeView(APIView):
 
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+
+class UserViewSet(viewsets.ModelViewSet):
+    """Administration over the User list — distinct from the self-service endpoints
+    above (register/login/me). Gated by manage_users, same as Roles/Permissions."""
+
+    queryset = User.objects.all().prefetch_related("groups").order_by("email")
+    serializer_class = UserAdminSerializer
+    permission_classes = [IsSuperuserOrManageUsers]
+    filterset_fields = ["is_active", "is_staff"]
+    search_fields = ["email", "first_name", "last_name"]
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save(update_fields=["is_active"])

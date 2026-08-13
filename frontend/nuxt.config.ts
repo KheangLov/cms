@@ -17,6 +17,13 @@ export default defineNuxtConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    // Docker bind mounts on Windows don't reliably forward inotify events into the
+    // Linux container, so Vite/chokidar's default watcher silently misses file edits
+    // (content is there on disk — confirmed via `docker compose exec` — but no HMR
+    // fires). Polling is slower but actually works across the bind mount.
+    server: {
+      watch: { usePolling: true, interval: 300 },
+    },
   },
 
   // Hybrid rendering — CMS_BUILD_PROMPT.md §6.3: public pages stay SSR (good SEO,

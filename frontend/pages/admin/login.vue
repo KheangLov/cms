@@ -6,9 +6,15 @@ const error = ref('')
 const loading = ref(false)
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 const config = useRuntimeConfig()
 
 const pendingToken = ref<string | null>(null)
+
+function destination(): string {
+  const redirect = route.query.redirect
+  return typeof redirect === 'string' && redirect.startsWith('/admin') ? redirect : '/admin'
+}
 
 async function submit() {
   error.value = ''
@@ -18,7 +24,7 @@ async function submit() {
     if (result.requiresTwoFactor) {
       pendingToken.value = result.pendingToken
     } else {
-      await router.push('/admin/pages')
+      await router.push(destination())
     }
   } catch {
     error.value = 'Invalid email or password.'
@@ -33,7 +39,7 @@ async function submitCode() {
   loading.value = true
   try {
     await auth.verifyTwoFactor(pendingToken.value, code.value)
-    await router.push('/admin/pages')
+    await router.push(destination())
   } catch {
     error.value = 'Invalid code — check your authenticator app or use a recovery code.'
   } finally {
