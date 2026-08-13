@@ -13,6 +13,7 @@ class CommentSerializer(serializers.ModelSerializer):
     target_type = serializers.ChoiceField(choices=list(TARGET_MODELS), write_only=True)
     target_id = serializers.IntegerField(write_only=True)
     resolved_target_type = serializers.SerializerMethodField(read_only=True)
+    author_email = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Comment
@@ -23,6 +24,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "resolved_target_type",
             "object_id",
             "author",
+            "author_email",
             "parent",
             "body",
             "status",
@@ -33,6 +35,9 @@ class CommentSerializer(serializers.ModelSerializer):
 
     def get_resolved_target_type(self, obj):
         return obj.content_type.model
+
+    def get_author_email(self, obj):
+        return obj.author.email if obj.author_id else None
 
     def validate(self, attrs):
         target_type = attrs.get("target_type")

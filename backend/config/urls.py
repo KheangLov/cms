@@ -1,4 +1,3 @@
-from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
@@ -7,8 +6,13 @@ from apps.search.views import SearchView
 from apps.users.social import SocialExchangeView
 from apps.users.urls import admin_urlpatterns as user_admin_urlpatterns
 
+# Django's own admin site (/admin/) is deliberately not mounted — this backend is
+# REST-API-only. The Nuxt admin dashboard (frontend/pages/admin/**) has full CRUD
+# parity: pages, posts, media, users, roles, settings, comments, activity log.
+# django.contrib.admin stays in INSTALLED_APPS (apps/*/admin.py still registers
+# against it) since django-allauth soft-depends on contrib.messages being present —
+# not worth the risk of touching that for a route that's already unreachable.
 urlpatterns = [
-    path("admin/", admin.site.urls),
     path("accounts/", include("allauth.urls")),
     path("api/v1/health/", include("apps.health.urls")),
     path("api/v1/auth/", include("apps.users.urls")),
