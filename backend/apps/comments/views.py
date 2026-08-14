@@ -12,6 +12,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = [CommentPermission]
     filterset_fields = ["content_type", "object_id", "status", "parent"]
+    search_fields = ["body", "author__email"]
 
     def get_queryset(self):
         qs = Comment.objects.select_related("author", "content_type")

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: 'auth' })
 
+const { confirm } = useConfirmDialog()
+const { t } = useI18n()
+
 interface RoleRow {
   id: number
   name: string
@@ -19,9 +22,7 @@ interface UserRow {
   groups_detail: RoleRow[]
 }
 
-const users = ref<UserRow[]>([])
 const roles = ref<RoleRow[]>([])
-const loading = ref(true)
 const dialog = ref(false)
 const editing = ref<UserRow | null>(null)
 const form = reactive({
@@ -34,16 +35,27 @@ const form = reactive({
   password: '',
 })
 
-async function load() {
-  loading.value = true
-  const [usersResp, rolesResp] = await Promise.all([
-    useAuthFetch<{ results: UserRow[] } | UserRow[]>('/api/v1/users/'),
-    useAuthFetch<{ results: RoleRow[] } | RoleRow[]>('/api/v1/roles/'),
-  ])
-  users.value = Array.isArray(usersResp) ? usersResp : usersResp.results
-  roles.value = Array.isArray(rolesResp) ? rolesResp : rolesResp.results
-  loading.value = false
+const search = ref('')
+const activeFilter = ref<string | null>(null)
+
+const { items: users, loading, loadingMore, hasMore, load, loadMore } = useInfiniteList<UserRow>(() => {
+  const params = new URLSearchParams()
+  if (search.value) params.set('search', search.value)
+  if (activeFilter.value !== null) params.set('is_active', activeFilter.value)
+  return `/api/v1/users/?${params}`
+})
+const sentinel = useInfiniteScrollSentinel(loadMore)
+
+// Roles are a fixed, small dropdown source for the edit form — not part of the
+// infinite-scrolled resource, so they get their own plain one-shot fetch.
+async function loadRoles() {
+  const resp = await useAuthFetch<{ results: RoleRow[] } | RoleRow[]>('/api/v1/roles/')
+  roles.value = Array.isArray(resp) ? resp : resp.results
 }
+
+const debouncedLoad = useDebounceFn(load, 300)
+watch(search, debouncedLoad)
+watch(activeFilter, load)
 
 function openCreate() {
   editing.value = null
@@ -85,59 +97,101 @@ async function save() {
 }
 
 async function deactivate(user: UserRow) {
-  if (!confirm(`Deactivate "${user.email}"? They will no longer be able to log in.`)) return
+  const ok = await confirm({
+    title: t('usersAdmin.deactivateTitle'),
+    message: t('usersAdmin.deactivateMessage', { email: user.email }),
+    confirmLabel: t('usersAdmin.deactivate'),
+  })
+  if (!ok) return
   await useAuthFetch(`/api/v1/users/${user.id}/`, { method: 'DELETE' })
   await load()
 }
 
-onMounted(load)
+onMounted(() => {
+  load()
+  loadRoles()
+})
 useSeoMeta({ title: 'Users — CMS Admin' })
 </script>
 
 <template>
   <div>
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-black">Users</h1>
-      <v-btn color="primary" @click="openCreate">New user</v-btn>
+      <h1 class="text-2xl font-black">{{ $t('nav.users') }}</h1>
+      <v-btn color="primary" @click="openCreate">
+        <Icon name="solar:add-circle-bold-duotone" size="1.05rem" class="mr-1.5" />
+        {{ $t('usersAdmin.newUser') }}
+      </v-btn>
     </div>
 
-    <p v-if="loading" class="mt-6 text-sm" style="color: var(--text-faint)">Loading…</p>
-    <ul v-else class="mt-6 divide-y rounded-lg border" style="border-color: var(--border); background: var(--surface)">
-      <li v-for="user in users" :key="user.id" class="flex items-center justify-between px-4 py-3">
-        <div>
+    <div class="mt-6 flex flex-wrap items-center gap-3">
+      <v-text-field
+        v-model="search"
+        :placeholder="$t('usersAdmin.searchPlaceholder')"
+        hide-details
+        density="compact"
+        style="max-width: 18rem"
+      >
+        <template #prepend-inner><Icon name="solar:magnifer-bold-duotone" size="1.05rem" /></template>
+      </v-text-field>
+      <v-select
+        v-model="activeFilter"
+        :items="[
+          { title: $t('usersAdmin.allUsers'), value: null },
+          { title: $t('usersAdmin.active'), value: 'true' },
+          { title: $t('usersAdmin.inactive'), value: 'false' },
+        ]"
+        hide-details
+        density="compact"
+        style="max-width: 12rem"
+      />
+    </div>
+
+    <p v-if="loading" class="mt-4 text-sm" style="color: var(--text-faint)">{{ $t('common.loading') }}</p>
+    <div v-else class="bento-card mt-4">
+      <p v-if="!users.length" class="px-4 py-6 text-sm" style="color: var(--text-faint)">{{ $t('usersAdmin.noUsersMatch') }}</p>
+      <div v-for="user in users" :key="user.id" class="bento-row">
+        <span class="bento-row__icon"><Icon name="solar:user-circle-bold-duotone" /></span>
+        <div class="bento-row__body">
           <div class="font-semibold">
             {{ user.email }}
-            <span v-if="user.is_superuser" class="ml-2 text-xs" style="color: var(--gold, var(--ember-text))">superuser</span>
-            <span v-if="!user.is_active" class="ml-2 text-xs" style="color: var(--error)">inactive</span>
+            <span v-if="user.is_superuser" class="ml-2 text-xs" style="color: var(--gold-text)">{{ $t('usersAdmin.superuser') }}</span>
+            <span v-if="!user.is_active" class="ml-2 text-xs" style="color: var(--error)">{{ $t('usersAdmin.inactive') }}</span>
           </div>
           <div class="text-xs" style="color: var(--text-faint)">
             {{ [user.first_name, user.last_name].filter(Boolean).join(' ') || '—' }}
             <template v-if="user.groups_detail.length"> · {{ user.groups_detail.map((g) => g.name).join(', ') }}</template>
           </div>
         </div>
-        <div class="flex items-center gap-3">
-          <button class="text-xs font-semibold" style="color: var(--info)" @click="openEdit(user)">Edit</button>
-          <button v-if="user.is_active" class="text-xs" style="color: var(--error)" @click="deactivate(user)">
-            Deactivate
+        <div class="bento-row__actions">
+          <button class="bento-icon-btn bento-icon-btn--primary" :title="$t('common.edit')" @click="openEdit(user)">
+            <Icon name="solar:pen-2-bold-duotone" />
+          </button>
+          <button v-if="user.is_active" class="bento-icon-btn bento-icon-btn--danger" :title="$t('usersAdmin.deactivate')" @click="deactivate(user)">
+            <Icon name="solar:user-block-bold-duotone" />
           </button>
         </div>
-      </li>
-    </ul>
+      </div>
+      <div v-if="users.length" ref="sentinel" class="flex justify-center py-4">
+        <span v-if="loadingMore" class="text-xs" style="color: var(--text-faint)">{{ $t('common.loadingMore') }}</span>
+        <span v-else-if="!hasMore" class="text-xs" style="color: var(--text-faint)">{{ $t('common.endOfList') }}</span>
+      </div>
+    </div>
 
     <v-dialog v-model="dialog" max-width="480">
-      <v-card :title="editing ? 'Edit user' : 'New user'">
+      <v-card :title="editing ? $t('usersAdmin.editUser') : $t('usersAdmin.newUser')">
         <v-card-text class="flex flex-col gap-3">
-          <v-text-field v-model="form.email" label="Email" hide-details density="compact" :disabled="!!editing" />
+          <v-text-field v-model="form.email" :label="$t('common.email')" hide-details density="compact" :disabled="!!editing" />
           <div class="flex gap-3">
-            <v-text-field v-model="form.first_name" label="First name" hide-details density="compact" />
-            <v-text-field v-model="form.last_name" label="Last name" hide-details density="compact" />
+            <v-text-field v-model="form.first_name" :label="$t('account.firstName')" hide-details density="compact" />
+            <v-text-field v-model="form.last_name" :label="$t('account.lastName')" hide-details density="compact" />
           </div>
           <v-select
             v-model="form.groups"
             :items="roles"
             item-title="name"
             item-value="id"
-            label="Roles"
+            :label="$t('usersAdmin.roles')"
             multiple
             chips
             hide-details
@@ -145,20 +199,20 @@ useSeoMeta({ title: 'Users — CMS Admin' })
           />
           <v-text-field
             v-model="form.password"
-            :label="editing ? 'New password (leave blank to keep current)' : 'Password'"
+            :label="editing ? $t('usersAdmin.newPasswordHint') : $t('usersAdmin.password')"
             type="password"
             hide-details
             density="compact"
           />
           <div class="flex gap-6">
-            <v-switch v-model="form.is_active" label="Active" hide-details density="compact" />
-            <v-switch v-model="form.is_staff" label="Staff (can access admin)" hide-details density="compact" />
+            <v-switch v-model="form.is_active" :label="$t('usersAdmin.active')" hide-details density="compact" />
+            <v-switch v-model="form.is_staff" :label="$t('usersAdmin.staffHint')" hide-details density="compact" />
           </div>
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="dialog = false">Cancel</v-btn>
-          <v-btn color="primary" @click="save">Save</v-btn>
+          <v-btn variant="text" @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="elevated" @click="save">{{ $t('common.save') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

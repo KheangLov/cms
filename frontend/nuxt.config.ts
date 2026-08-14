@@ -11,9 +11,29 @@ export default defineNuxtConfig({
     '@nuxtjs/i18n',
     '@nuxtjs/color-mode',
     '@nuxt/image',
+    '@nuxt/icon',
   ],
 
-  css: ['~/assets/css/tokens.scss', '~/assets/css/tailwind.css'],
+  // Solar icon set (@iconify-json/solar) is a local dependency — the module serves icons
+  // from our own Nitro route reading that package off disk, never api.iconify.design.
+  icon: {
+    provider: 'server',
+    serverBundle: 'local',
+    fallbackToApi: false,
+  },
+
+  css: [
+    // Self-hosted (matches the Iconify precedent — no runtime calls to
+    // fonts.google.com). Each file's unicode-range covers both Khmer and Latin,
+    // so one import per weight is enough; tokens.scss's font-family already
+    // names 'Kantumruy Pro' first, it just had nothing backing it until now.
+    '@fontsource/kantumruy-pro/400.css',
+    '@fontsource/kantumruy-pro/500.css',
+    '@fontsource/kantumruy-pro/600.css',
+    '@fontsource/kantumruy-pro/700.css',
+    '~/assets/css/tokens.scss',
+    '~/assets/css/tailwind.css',
+  ],
 
   vite: {
     plugins: [tailwindcss()],
@@ -33,6 +53,12 @@ export default defineNuxtConfig({
     '/admin/**': { ssr: false, robots: false },
   },
 
+  app: {
+    head: {
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+    },
+  },
+
   runtimeConfig: {
     // Server-only — SSR runs inside the frontend container and must reach the backend
     // container via the Docker network's service name, not "localhost". §6.3.
@@ -44,19 +70,31 @@ export default defineNuxtConfig({
   },
 
   colorMode: {
-    // §11.8 — three states: system (default), explicit light, explicit dark.
-    preference: 'system',
+    // Two explicit states only — light/dark, no "system" option (design call:
+    // a visible two-way toggle beats a tri-state cycle for discoverability).
+    preference: 'light',
     fallback: 'light',
     classSuffix: '',
   },
 
   i18n: {
+    langDir: 'locales',
     locales: [
-      { code: 'en', language: 'en-US', name: 'English' },
-      { code: 'km', language: 'km-KH', name: 'ខ្មែរ' },
+      { code: 'en', language: 'en-US', name: 'English', file: 'en.json' },
+      { code: 'km', language: 'km-KH', name: 'ខ្មែរ', file: 'km.json' },
     ],
     defaultLocale: 'en',
-    strategy: 'prefix_except_default',
+    // no_prefix (not prefix_except_default): content translation here is
+    // "same URL, different rendered language" via PageTranslation/block-props
+    // locale dicts, not locale-segmented routing — a /km/... URL scheme would
+    // fight the slug-based resolver for no benefit. Persistence is cookie-based
+    // instead (detectBrowserLanguage below).
+    strategy: 'no_prefix',
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'ember_locale',
+      redirectOn: 'no prefix',
+    },
   },
 
   vuetify: {
@@ -95,6 +133,26 @@ export default defineNuxtConfig({
             },
           },
         },
+      },
+      // Bento component chrome. Only *behavioural* defaults live here (which variant,
+      // whether Vuetify draws its own elevation) — the radius/shadow/colour values all
+      // come from the --radius-*/--shadow-* scale in assets/css/tokens.scss, applied
+      // there against Vuetify's own class names. Two reasons it's split that way:
+      // Vuetify's `rounded`/`elevation` props map to its own Material scale, not our
+      // tokens; and dialogs/menus teleport to <body>, outside any scoped stylesheet.
+      defaults: {
+        VBtn: { rounded: true, elevation: 0 },
+        // "solo" = filled, no underline — the only built-in variant that reads as a
+        // bento input. Its stock shadow/radius get overridden in tokens.scss.
+        VTextField: { variant: 'solo', flat: true },
+        VTextarea: { variant: 'solo', flat: true },
+        VSelect: { variant: 'solo', flat: true },
+        VSwitch: { color: 'primary', inset: true },
+        // elevation 0 everywhere: --shadow-bento does the lifting instead, so cards
+        // match the hand-rolled .bento-card used on the non-Vuetify parts of the UI.
+        VCard: { elevation: 0 },
+        VMenu: { transition: 'fade-transition' },
+        VList: { elevation: 0 },
       },
     },
   },

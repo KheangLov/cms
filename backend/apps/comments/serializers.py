@@ -58,3 +58,26 @@ class CommentSerializer(serializers.ModelSerializer):
         _, app_label, model_name = TARGET_MODELS[target_type]
         content_type = ContentType.objects.get(app_label=app_label, model=model_name)
         return Comment.objects.create(content_type=content_type, object_id=target_id, **validated_data)
+
+
+class CommentPublicSerializer(serializers.ModelSerializer):
+    """Read-only, embedded in PageDetailSerializer/PostDetailSerializer's `comments`
+    field — the public site never hits /api/v1/comments/ directly (it requires
+    auth), so the resolve/detail response carries the thread itself, same as
+    `blocks`. No target_type/id/status here: the caller already scoped the
+    queryset to one target's approved top-level comments."""
+
+    author_name = serializers.SerializerMethodField()
+    replies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Comment
+        fields = ["id", "author_name", "body", "created_at", "replies"]
+
+    def get_author_name(self, obj):
+        full_name = f"{obj.author.first_name} {obj.author.last_name}".strip()
+        return full_name or obj.author.email
+
+    def get_replies(self, obj):
+        children = obj.replies.filter(status="approved").select_related("author").order_by("created_at")
+        return CommentPublicSerializer(children, many=True).data

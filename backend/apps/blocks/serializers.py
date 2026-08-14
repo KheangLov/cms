@@ -18,6 +18,26 @@ class PageBlockSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at", "updated_at", "is_deleted", "deleted_at"]
 
+    def validate(self, attrs):
+        # PageType.allowed_block_types is empty (unrestricted) for every page type
+        # by default — this only fires once a page type has actually been scoped.
+        # Falls back to self.instance for partial updates that don't touch page/
+        # block_type (e.g. dragging a block just changes order).
+        page = attrs.get("page") or (self.instance.page if self.instance else None)
+        block_type = attrs.get("block_type") or (self.instance.block_type if self.instance else None)
+        if page and block_type:
+            allowed = page.page_type.allowed_block_types.all()
+            if allowed.exists() and block_type not in allowed:
+                raise serializers.ValidationError(
+                    {
+                        "block_type": (
+                            f"\"{block_type.name}\" isn't allowed on this page's type "
+                            f"(\"{page.page_type.name}\")."
+                        )
+                    }
+                )
+        return attrs
+
 
 class PostBlockSerializer(serializers.ModelSerializer):
     class Meta:

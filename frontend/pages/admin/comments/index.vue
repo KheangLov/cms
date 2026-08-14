@@ -1,6 +1,9 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: 'auth' })
 
+const { confirm } = useConfirmDialog()
+const { t } = useI18n()
+
 interface CommentRow {
   id: number
   resolved_target_type: string
@@ -11,17 +14,18 @@ interface CommentRow {
   created_at: string
 }
 
-const comments = ref<CommentRow[]>([])
-const loading = ref(true)
 const filter = ref<'pending' | 'approved' | 'spam' | 'all'>('pending')
+const search = ref('')
 
-async function load() {
-  loading.value = true
-  const path = filter.value === 'all' ? '/api/v1/comments/' : `/api/v1/comments/?status=${filter.value}`
-  const resp = await useAuthFetch<{ results: CommentRow[] } | CommentRow[]>(path)
-  comments.value = Array.isArray(resp) ? resp : resp.results
-  loading.value = false
-}
+const { items: comments, loading, loadingMore, hasMore, load, loadMore } = useInfiniteList<CommentRow>(() => {
+  const params = new URLSearchParams()
+  if (filter.value !== 'all') params.set('status', filter.value)
+  if (search.value) params.set('search', search.value)
+  return `/api/v1/comments/?${params}`
+})
+const sentinel = useInfiniteScrollSentinel(loadMore)
+
+watch(search, useDebounceFn(load, 300))
 
 async function approve(comment: CommentRow) {
   await useAuthFetch(`/api/v1/comments/${comment.id}/approve/`, { method: 'POST' })
@@ -34,7 +38,7 @@ async function reject(comment: CommentRow) {
 }
 
 async function remove(comment: CommentRow) {
-  if (!confirm('Delete this comment?')) return
+  if (!(await confirm({ message: t('commentsAdmin.deleteConfirm'), danger: true }))) return
   await useAuthFetch(`/api/v1/comments/${comment.id}/`, { method: 'DELETE' })
   await load()
 }
@@ -47,43 +51,70 @@ useSeoMeta({ title: 'Comments — CMS Admin' })
 
 <template>
   <div>
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-black">Comments</h1>
-      <div class="flex gap-1 rounded-full p-1" style="background: var(--surface-2)">
+    <h1 class="text-2xl font-black">{{ $t('nav.comments') }}</h1>
+
+    <div class="mt-6 flex flex-wrap items-center gap-3">
+      <v-text-field
+        v-model="search"
+        :placeholder="$t('commentsAdmin.searchPlaceholder')"
+        hide-details
+        density="compact"
+        style="max-width: 18rem"
+      >
+        <template #prepend-inner><Icon name="solar:magnifer-bold-duotone" size="1.05rem" /></template>
+      </v-text-field>
+      <Icon name="solar:filter-bold-duotone" size="1rem" style="color: var(--text-faint)" />
+      <div class="bento-pill-group">
         <button
           v-for="opt in ['pending', 'approved', 'spam', 'all']"
           :key="opt"
-          class="rounded-full px-3 py-1 text-xs font-semibold capitalize"
-          :style="filter === opt ? 'background: var(--gradient-primary); color: white' : 'color: var(--text-secondary)'"
+          class="bento-pill"
+          :class="{ 'bento-pill--active': filter === opt }"
           @click="filter = opt as any"
         >
-          {{ opt }}
+          {{ $t(`commentsAdmin.filter${opt.charAt(0).toUpperCase() + opt.slice(1)}`) }}
         </button>
       </div>
     </div>
 
-    <p v-if="loading" class="mt-6 text-sm" style="color: var(--text-faint)">Loading…</p>
-    <p v-else-if="!comments.length" class="mt-6 text-sm" style="color: var(--text-faint)">Nothing here.</p>
-    <ul v-else class="mt-6 divide-y rounded-lg border" style="border-color: var(--border); background: var(--surface)">
-      <li v-for="comment in comments" :key="comment.id" class="px-4 py-3">
-        <div class="flex items-center justify-between text-xs" style="color: var(--text-faint)">
-          <span>
-            <strong style="color: var(--text-secondary)">{{ comment.author_email || 'Unknown' }}</strong>
-            on {{ comment.resolved_target_type }} #{{ comment.object_id }}
-          </span>
-          <span>{{ new Date(comment.created_at).toLocaleString() }}</span>
+    <p v-if="loading" class="mt-4 text-sm" style="color: var(--text-faint)">{{ $t('common.loading') }}</p>
+    <p v-else-if="!comments.length" class="mt-4 text-sm" style="color: var(--text-faint)">
+      {{ search ? $t('commentsAdmin.noCommentsMatch') : $t('commentsAdmin.nothingHere') }}
+    </p>
+    <div v-else class="bento-card mt-4">
+      <div v-for="comment in comments" :key="comment.id" class="bento-row" style="align-items: flex-start">
+        <span class="bento-row__icon"><Icon name="solar:chat-round-dots-bold-duotone" /></span>
+        <div class="bento-row__body">
+          <div class="flex items-center justify-between text-xs" style="color: var(--text-faint)">
+            <span>
+              <strong style="color: var(--text-secondary)">{{ comment.author_email || $t('commentsAdmin.unknown') }}</strong>
+              {{ $t('commentsAdmin.onTarget', { type: comment.resolved_target_type, id: comment.object_id }) }}
+            </span>
+            <span>{{ new Date(comment.created_at).toLocaleString() }}</span>
+          </div>
+          <p class="mt-1 text-sm">{{ comment.body }}</p>
         </div>
-        <p class="mt-1 text-sm">{{ comment.body }}</p>
-        <div class="mt-2 flex gap-3">
-          <button v-if="comment.status !== 'approved'" class="text-xs font-semibold" style="color: var(--success)" @click="approve(comment)">
-            Approve
+        <div class="bento-row__actions">
+          <button
+            v-if="comment.status !== 'approved'"
+            class="bento-icon-btn bento-icon-btn--success"
+            :title="$t('common.approve')"
+            @click="approve(comment)"
+          >
+            <Icon name="solar:check-circle-bold-duotone" />
           </button>
-          <button v-if="comment.status !== 'spam'" class="text-xs font-semibold" style="color: var(--gold, var(--ember-text))" @click="reject(comment)">
-            Mark spam
+          <button v-if="comment.status !== 'spam'" class="bento-icon-btn" :title="$t('commentsAdmin.markSpam')" @click="reject(comment)">
+            <Icon name="solar:flag-2-bold-duotone" />
           </button>
-          <button class="text-xs" style="color: var(--error)" @click="remove(comment)">Delete</button>
+          <button class="bento-icon-btn bento-icon-btn--danger" :title="$t('common.delete')" @click="remove(comment)">
+            <Icon name="solar:trash-bin-2-bold-duotone" />
+          </button>
         </div>
-      </li>
-    </ul>
+      </div>
+      <div v-if="comments.length" ref="sentinel" class="flex justify-center py-4">
+        <span v-if="loadingMore" class="text-xs" style="color: var(--text-faint)">{{ $t('common.loadingMore') }}</span>
+        <span v-else-if="!hasMore" class="text-xs" style="color: var(--text-faint)">{{ $t('common.endOfList') }}</span>
+      </div>
+    </div>
   </div>
 </template>

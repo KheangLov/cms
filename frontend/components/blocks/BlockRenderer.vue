@@ -1,6 +1,16 @@
 <script setup lang="ts">
+import CalloutBlock from './CalloutBlock.vue'
+import CardsBlock from './CardsBlock.vue'
 import ColumnsBlock from './ColumnsBlock.vue'
+import ContactFormBlock from './ContactFormBlock.vue'
+import FeatureGridBlock from './FeatureGridBlock.vue'
+import FooterBlock from './FooterBlock.vue'
 import HeroBlock from './HeroBlock.vue'
+import MapBlock from './MapBlock.vue'
+import NavbarBlock from './NavbarBlock.vue'
+import PostsBlock from './PostsBlock.vue'
+import QuizBlock from './QuizBlock.vue'
+import SurveyBlock from './SurveyBlock.vue'
 import SwiperBlock from './SwiperBlock.vue'
 import TextSectionBlock from './TextSectionBlock.vue'
 
@@ -25,6 +35,16 @@ const componentMap: Record<string, unknown> = {
   'text-section': TextSectionBlock,
   swiper: SwiperBlock,
   columns: ColumnsBlock,
+  posts: PostsBlock,
+  navbar: NavbarBlock,
+  footer: FooterBlock,
+  'feature-grid': FeatureGridBlock,
+  callout: CalloutBlock,
+  cards: CardsBlock,
+  'contact-form': ContactFormBlock,
+  map: MapBlock,
+  'quiz-embed': QuizBlock,
+  'survey-embed': SurveyBlock,
 }
 </script>
 
@@ -37,7 +57,7 @@ const componentMap: Record<string, unknown> = {
       :locale="locale || 'en'"
     />
     <div v-else class="rounded border border-dashed border-gray-300 p-4 text-sm text-gray-400">
-      Unknown block type: {{ block.block_type.slug }}
+      {{ $t('blockRenderer.unknownBlockType', { slug: block.block_type.slug }) }}
     </div>
   </template>
 </template>

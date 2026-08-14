@@ -5,6 +5,10 @@ interface User {
   email: string
   first_name: string
   last_name: string
+  avatar: string | null
+  locale_preference: 'en' | 'km'
+  theme_preference: 'light' | 'dark'
+  is_2fa_enabled: boolean
   is_superuser: boolean
   is_staff: boolean
 }

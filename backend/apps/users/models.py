@@ -2,6 +2,8 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from apps.common.constants import LOCALE_CHOICES
+
 
 class UserManager(BaseUserManager):
     """Email is the identifier — CMS_BUILD_PROMPT.md §5.4 ("email/password auth")."""
@@ -39,11 +41,10 @@ class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True)
 
-    LOCALE_CHOICES = [("en", "English"), ("km", "Khmer")]
     locale_preference = models.CharField(max_length=8, choices=LOCALE_CHOICES, default="en")
 
-    THEME_CHOICES = [("system", "System"), ("light", "Light"), ("dark", "Dark")]
-    theme_preference = models.CharField(max_length=8, choices=THEME_CHOICES, default="system")
+    THEME_CHOICES = [("light", "Light"), ("dark", "Dark")]
+    theme_preference = models.CharField(max_length=8, choices=THEME_CHOICES, default="light")
 
     avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
     is_2fa_enabled = models.BooleanField(default=False)

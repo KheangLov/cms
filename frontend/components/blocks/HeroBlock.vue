@@ -16,16 +16,18 @@ function t(field: string): string {
 
 <template>
   <section
-    class="relative flex min-h-[20rem] flex-col items-center justify-center rounded-lg px-6 py-16 text-center text-white"
-    :style="
-      block.props.backgroundImageUrl
+    class="relative mx-6 flex min-h-[20rem] flex-col items-center justify-center px-6 py-16 text-center text-white sm:mx-0"
+    :style="{
+      borderRadius: 'var(--radius-lg)',
+      boxShadow: 'var(--shadow-bento)',
+      ...(block.props.backgroundImageUrl
         ? {
             backgroundImage: `url(${block.props.backgroundImageUrl})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }
-        : { background: 'var(--gradient-primary)' }
-    "
+        : { background: 'var(--gradient-primary)' }),
+    }"
   >
     <h2 v-if="t('heading')" class="text-4xl font-black">{{ t('heading') }}</h2>
     <p v-if="t('subheading')" class="mt-2 text-lg opacity-90">{{ t('subheading') }}</p>

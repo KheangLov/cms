@@ -1,24 +1,21 @@
 <script setup lang="ts">
 definePageMeta({ layout: 'admin', middleware: 'auth' })
 
+const { confirm } = useConfirmDialog()
+const { t } = useI18n()
+
 interface TagRow {
   id: number
   name: string
   slug: string
 }
 
-const tags = ref<TagRow[]>([])
-const loading = ref(true)
 const dialog = ref(false)
 const editing = ref<TagRow | null>(null)
 const form = reactive({ name: '', slug: '' })
 
-async function load() {
-  loading.value = true
-  const resp = await useAuthFetch<{ results: TagRow[] } | TagRow[]>('/api/v1/tags/')
-  tags.value = Array.isArray(resp) ? resp : resp.results
-  loading.value = false
-}
+const { items: tags, loading, loadingMore, hasMore, load, loadMore } = useInfiniteList<TagRow>(() => '/api/v1/tags/')
+const sentinel = useInfiniteScrollSentinel(loadMore)
 
 function openCreate() {
   editing.value = null
@@ -46,7 +43,7 @@ async function save() {
 }
 
 async function remove(tag: TagRow) {
-  if (!confirm(`Delete tag "${tag.name}"?`)) return
+  if (!(await confirm({ message: t('tagsAdmin.deleteConfirm', { name: tag.name }), danger: true }))) return
   await useAuthFetch(`/api/v1/tags/${tag.id}/`, { method: 'DELETE' })
   await load()
 }
@@ -60,36 +57,48 @@ useSeoMeta({ title: 'Tags — CMS Admin' })
     <div class="flex items-center justify-between">
       <div>
         <NuxtLink to="/admin/posts" class="text-sm" style="color: var(--text-faint)">&larr; Posts</NuxtLink>
-        <h1 class="text-2xl font-black">Tags</h1>
+        <h1 class="text-2xl font-black">{{ $t('tagsAdmin.title') }}</h1>
       </div>
-      <v-btn color="primary" @click="openCreate">New tag</v-btn>
+      <v-btn color="primary" @click="openCreate">
+        <Icon name="solar:add-circle-bold-duotone" size="1.05rem" class="mr-1.5" />
+        {{ $t('tagsAdmin.newTag') }}
+      </v-btn>
     </div>
 
-    <p v-if="loading" class="mt-6 text-sm" style="color: var(--text-faint)">Loading…</p>
-    <ul v-else class="mt-6 divide-y rounded-lg border" style="border-color: var(--border); background: var(--surface)">
-      <li v-if="!tags.length" class="px-4 py-6 text-sm" style="color: var(--text-faint)">No tags yet.</li>
-      <li v-for="tag in tags" :key="tag.id" class="flex items-center justify-between px-4 py-3">
-        <div>
+    <p v-if="loading" class="mt-6 text-sm" style="color: var(--text-faint)">{{ $t('common.loading') }}</p>
+    <div v-else class="bento-card mt-6">
+      <p v-if="!tags.length" class="px-4 py-6 text-sm" style="color: var(--text-faint)">{{ $t('tagsAdmin.noTagsYet') }}</p>
+      <div v-for="tag in tags" :key="tag.id" class="bento-row">
+        <span class="bento-row__icon"><Icon name="solar:tag-bold-duotone" /></span>
+        <div class="bento-row__body">
           <div class="font-semibold">{{ tag.name }}</div>
           <div class="text-xs" style="color: var(--text-faint)">/{{ tag.slug }}</div>
         </div>
-        <div class="flex items-center gap-3">
-          <button class="text-xs font-semibold" style="color: var(--info)" @click="openEdit(tag)">Edit</button>
-          <button class="text-xs" style="color: var(--error)" @click="remove(tag)">Delete</button>
+        <div class="bento-row__actions">
+          <button class="bento-icon-btn bento-icon-btn--primary" :title="$t('common.edit')" @click="openEdit(tag)">
+            <Icon name="solar:pen-2-bold-duotone" />
+          </button>
+          <button class="bento-icon-btn bento-icon-btn--danger" :title="$t('common.delete')" @click="remove(tag)">
+            <Icon name="solar:trash-bin-2-bold-duotone" />
+          </button>
         </div>
-      </li>
-    </ul>
+      </div>
+      <div v-if="tags.length" ref="sentinel" class="flex justify-center py-4">
+        <span v-if="loadingMore" class="text-xs" style="color: var(--text-faint)">{{ $t('common.loadingMore') }}</span>
+        <span v-else-if="!hasMore" class="text-xs" style="color: var(--text-faint)">{{ $t('common.endOfList') }}</span>
+      </div>
+    </div>
 
     <v-dialog v-model="dialog" max-width="420">
-      <v-card :title="editing ? 'Edit tag' : 'New tag'">
+      <v-card :title="editing ? $t('tagsAdmin.editTag') : $t('tagsAdmin.newTag')">
         <v-card-text class="flex flex-col gap-3">
-          <v-text-field v-model="form.name" label="Name" hide-details density="compact" />
-          <v-text-field v-model="form.slug" label="Slug" hide-details density="compact" />
+          <v-text-field v-model="form.name" :label="$t('common.name')" hide-details density="compact" />
+          <v-text-field v-model="form.slug" :label="$t('common.slug')" hide-details density="compact" />
         </v-card-text>
         <v-card-actions>
           <v-spacer />
-          <v-btn variant="text" @click="dialog = false">Cancel</v-btn>
-          <v-btn color="primary" @click="save">Save</v-btn>
+          <v-btn variant="text" @click="dialog = false">{{ $t('common.cancel') }}</v-btn>
+          <v-btn color="primary" variant="elevated" @click="save">{{ $t('common.save') }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>

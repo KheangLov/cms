@@ -2,6 +2,15 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
+# Shared by Page and Post — how wide the rendered content column is, applied by
+# ResolvedContent.vue as a max-width class on the public <main> wrapper.
+CONTAINER_WIDTH_CHOICES = [
+    ("narrow", "Narrow"),
+    ("default", "Default"),
+    ("wide", "Wide"),
+    ("full", "Full width"),
+]
+
 
 class TimestampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)

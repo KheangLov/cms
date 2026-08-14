@@ -13,6 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
+            "avatar",
             "locale_preference",
             "theme_preference",
             "is_2fa_enabled",
@@ -64,11 +65,14 @@ class UserAdminSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         password = validated_data.pop("password", None)
+        groups = validated_data.pop("groups", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if password:
             instance.set_password(password)
         instance.save()
+        if groups is not None:
+            instance.groups.set(groups)
         return instance
 
 

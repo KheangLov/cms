@@ -1,9 +1,8 @@
 from django.conf import settings
 from django.db import models
 
-from apps.common.models import SoftDeleteModel, TimestampedModel
-
-LOCALE_CHOICES = [("en", "English"), ("km", "Khmer")]
+from apps.common.constants import LOCALE_CHOICES
+from apps.common.models import CONTAINER_WIDTH_CHOICES, SoftDeleteModel, TimestampedModel
 
 
 class Category(TimestampedModel):
@@ -89,6 +88,11 @@ class Post(SoftDeleteModel):
         "media_library.Media", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
     published_at = models.DateTimeField(null=True, blank=True)
+
+    # Same "page settings" fields as Page — see apps/pages/models.py.
+    container_width = models.CharField(max_length=20, choices=CONTAINER_WIDTH_CHOICES, default="default")
+    background_color = models.CharField(max_length=30, blank=True)
+    background_image_url = models.CharField(max_length=500, blank=True)
 
     class Meta:
         ordering = ["-published_at", "-created_at"]

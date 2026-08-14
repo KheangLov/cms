@@ -90,6 +90,9 @@ class PostSerializer(serializers.ModelSerializer):
             "featured_image",
             "comments_enabled",
             "published_at",
+            "container_width",
+            "background_color",
+            "background_image_url",
             "created_at",
             "updated_at",
             "is_deleted",
@@ -127,10 +130,19 @@ class PostDetailSerializer(PostSerializer):
     category = CategorySerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     blocks = serializers.SerializerMethodField()
+    comments = serializers.SerializerMethodField()
 
     class Meta(PostSerializer.Meta):
-        fields = PostSerializer.Meta.fields + ["blocks"]
+        fields = PostSerializer.Meta.fields + ["blocks", "comments"]
 
     def get_blocks(self, obj):
         top_level = obj.blocks.filter(parent__isnull=True).select_related("block_type").order_by("order")
         return PostBlockTreeSerializer(top_level, many=True).data
+
+    def get_comments(self, obj):
+        from apps.comments.serializers import CommentPublicSerializer
+        from apps.comments.utils import approved_comments_for
+
+        if not obj.comments_enabled:
+            return []
+        return CommentPublicSerializer(approved_comments_for(obj), many=True).data

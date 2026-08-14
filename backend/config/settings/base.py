@@ -60,6 +60,9 @@ INSTALLED_APPS = [
     "apps.search",
     "apps.ai_agent",
     "apps.realtime",
+    "apps.contact_forms",
+    "apps.quizzes",
+    "apps.surveys",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -198,7 +201,7 @@ CORS_ALLOW_CREDENTIALS = True  # the frontend sends/receives the httpOnly refres
 # ---------- DRF — CMS_BUILD_PROMPT.md §5.16 ----------
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "apps.common.pagination.StandardPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",

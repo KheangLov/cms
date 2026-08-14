@@ -2,9 +2,35 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.blocks.models import BlockType, PageBlock
+
 from .models import Page, PageType
 from .permissions import PagePermission
 from .serializers import PageDetailSerializer, PageSerializer, PageTypeSerializer
+
+
+def _instantiate_default_blocks(page):
+    """Populates a newly-created page with its PageType's `default_blocks`
+    preset — a starting point the editor edits from, applied once at creation.
+    Unknown block-type slugs in the preset are skipped rather than raising,
+    since a page type shouldn't fail to create over a stale/misconfigured
+    preset (e.g. a block type that was later removed)."""
+    specs = page.page_type.default_blocks
+    if not specs:
+        return
+
+    def create_level(items, parent):
+        for order, item in enumerate(items):
+            try:
+                block_type = BlockType.objects.get(slug=item["block_type"])
+            except BlockType.DoesNotExist:
+                continue
+            block = PageBlock.objects.create(
+                page=page, block_type=block_type, parent=parent, order=order, props=item.get("props", {})
+            )
+            create_level(item.get("children", []), block)
+
+    create_level(specs, None)
 
 
 class PageViewSet(viewsets.ModelViewSet):
@@ -34,7 +60,8 @@ class PageViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        page = serializer.save(created_by=self.request.user)
+        _instantiate_default_blocks(page)
 
     def perform_destroy(self, instance):
         instance.soft_delete(user=self.request.user)

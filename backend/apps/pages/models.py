@@ -1,9 +1,8 @@
 from django.conf import settings
 from django.db import models
 
-from apps.common.models import SoftDeleteModel, TimestampedModel
-
-LOCALE_CHOICES = [("en", "English"), ("km", "Khmer")]
+from apps.common.constants import LOCALE_CHOICES
+from apps.common.models import CONTAINER_WIDTH_CHOICES, SoftDeleteModel, TimestampedModel
 
 
 class PageType(TimestampedModel):
@@ -15,6 +14,24 @@ class PageType(TimestampedModel):
     slug = models.SlugField(unique=True)
     description = models.CharField(max_length=255, blank=True)
     is_system = models.BooleanField(default=False)
+
+    # Empty (the default for every page type today) means unrestricted — every
+    # block type is available, the pre-existing behavior. A non-empty set scopes
+    # the builder's palette (and is enforced server-side in PageBlockSerializer)
+    # to just these block types, so e.g. a "Contact" page type could be limited to
+    # the blocks that actually make sense on a contact page.
+    allowed_block_types = models.ManyToManyField(
+        "blocks.BlockType", blank=True, related_name="allowed_for_page_types"
+    )
+
+    # Blocks to auto-create on a *new* page of this type — a starting point an
+    # editor edits from, not a template that stays in sync afterwards. Each
+    # entry: {"block_type": "<slug>", "props": {...}, "children": [...]}
+    # (children nest the same shape, for e.g. Columns' child blocks). Applied
+    # once, at creation time, in PageViewSet.perform_create — never touches an
+    # existing page, and duplicate()/update() don't go through that path so
+    # they're unaffected.
+    default_blocks = models.JSONField(default=list, blank=True)
 
     class Meta:
         ordering = ["name"]
@@ -46,7 +63,21 @@ class Page(SoftDeleteModel):
         settings.AUTH_USER_MODEL, null=True, on_delete=models.SET_NULL, related_name="+"
     )
 
+    # Per-page presentation, independent of block content — a "page settings"
+    # concern, not a block. `background_image_url` is freeform text rather than a
+    # Media FK, same trade-off HeroBlock.backgroundImageUrl already made: no
+    # picker UI needed, and an admin can point it at anything.
+    container_width = models.CharField(max_length=20, choices=CONTAINER_WIDTH_CHOICES, default="default")
+    background_color = models.CharField(max_length=30, blank=True)
+    background_image_url = models.CharField(max_length=500, blank=True)
+
     class Meta:
+        # Without this, paginated Page lists are ordered only by whatever Postgres
+        # happens to return, so rows can repeat or be skipped across page boundaries
+        # (DRF warns about exactly this: UnorderedObjectListWarning). -id is a
+        # tiebreaker for rows sharing a created_at. Post/Media/Comment already set
+        # their own ordering; Page was the only SoftDeleteModel missing it.
+        ordering = ["-created_at", "-id"]
         constraints = [
             models.UniqueConstraint(
                 fields=["parent", "slug"],
@@ -68,9 +99,16 @@ class Page(SoftDeleteModel):
         return self.slug
 
     def full_path(self):
+        # The `seen` guard is deliberate: PageSerializer rejects parent cycles, but
+        # this walk must not hang on a row that predates that validation or was
+        # written directly (shell/fixture/SQL). Without it a self-parented page spins
+        # forever while `segments` grows unboundedly — one bad row would take out a
+        # worker thread on any request that renders a page path.
         segments = [self.slug]
+        seen = {self.pk}
         node = self.parent
-        while node is not None:
+        while node is not None and node.pk not in seen:
+            seen.add(node.pk)
             segments.append(node.slug)
             node = node.parent
         return "/".join(reversed(segments))

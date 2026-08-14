@@ -5,12 +5,13 @@
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const { t } = useI18n()
 const error = ref('')
 
 onMounted(async () => {
   const code = route.query.code as string | undefined
   if (!code) {
-    error.value = 'Missing exchange code.'
+    error.value = t('auth.missingExchangeCode')
     return
   }
   try {
@@ -25,7 +26,7 @@ onMounted(async () => {
     auth.user = data.user
     await router.push('/admin/pages')
   } catch {
-    error.value = 'That sign-in link expired or was already used — try signing in again.'
+    error.value = t('auth.socialLoginExpired')
   }
 })
 
@@ -34,7 +35,13 @@ useSeoMeta({ title: 'Signing in… — CMS Admin' })
 
 <template>
   <div class="mx-auto mt-24 max-w-sm px-6 text-center">
-    <p v-if="error" class="text-sm text-red-600">{{ error }}</p>
-    <p v-else class="text-sm text-gray-400">Signing you in…</p>
+    <p v-if="error" class="flex items-center justify-center gap-1.5 text-sm" style="color: var(--error)">
+      <Icon name="solar:close-circle-bold-duotone" size="1.1rem" />
+      {{ error }}
+    </p>
+    <div v-else class="flex items-center justify-center gap-2 text-sm" style="color: var(--text-faint)">
+      <v-progress-circular size="18" width="2" indeterminate color="primary" />
+      {{ $t('auth.signingIn') }}
+    </div>
   </div>
 </template>

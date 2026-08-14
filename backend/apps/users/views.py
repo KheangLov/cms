@@ -122,6 +122,16 @@ class MeView(APIView):
     def get(self, request):
         return Response(UserSerializer(request.user).data)
 
+    def patch(self, request):
+        # Self-service profile edit (name/avatar/locale/theme) — deliberately the
+        # same UserSerializer as GET, so read_only_fields (id/is_superuser/is_staff/
+        # date_joined) can't be changed here even if a client sends them; that
+        # requires the manage_users-gated UserViewSet instead.
+        serializer = UserSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
 
 class UserViewSet(viewsets.ModelViewSet):
     """Administration over the User list — distinct from the self-service endpoints

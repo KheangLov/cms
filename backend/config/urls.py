@@ -1,7 +1,7 @@
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
-from apps.pages.resolver import ResolveView
+from apps.pages.resolver import ResolveView, SiteChromeView
 from apps.search.views import SearchView
 from apps.users.social import SocialExchangeView
 from apps.users.urls import admin_urlpatterns as user_admin_urlpatterns
@@ -26,7 +26,11 @@ urlpatterns = [
     path("api/v1/", include("apps.blocks.urls")),
     path("api/v1/", include("apps.activity_log.urls")),
     path("api/v1/", include("apps.comments.urls")),
+    path("api/v1/", include("apps.contact_forms.urls")),
+    path("api/v1/", include("apps.quizzes.urls")),
+    path("api/v1/", include("apps.surveys.urls")),
     path("api/v1/resolve/", ResolveView.as_view(), name="resolve"),
+    path("api/v1/site-chrome/", SiteChromeView.as_view(), name="site-chrome"),
     path("api/v1/search/", SearchView.as_view(), name="search"),
     path("api/v1/", include("apps.ai_agent.urls")),
     path("api/v1/schema/", SpectacularAPIView.as_view(), name="schema"),
